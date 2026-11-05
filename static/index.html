@@ -31,6 +31,16 @@
             placeholder="Add details or context (optional)..."
             autocomplete="off"
           />
+          <div class="date-inputs-group">
+            <div class="date-field">
+              <label for="idea-start-date">Start Date</label>
+              <input type="date" id="idea-start-date" />
+            </div>
+            <div class="date-field">
+              <label for="idea-end-date">Target Date</label>
+              <input type="date" id="idea-end-date" />
+            </div>
+          </div>
         </div>
         <button type="submit" id="submit-btn" class="btn btn-primary">Add Idea</button>
       </form>
@@ -81,6 +91,17 @@
           <button type="button" id="modal-close" class="modal-close-btn" aria-label="Close modal">✕</button>
         </div>
         <h2 id="modal-title" class="modal-title"></h2>
+        <div class="modal-dates" id="modal-dates-wrap">
+          <div class="modal-date-item">
+            <span class="date-label">Start Date:</span>
+            <span class="date-value" id="modal-start-date">—</span>
+          </div>
+          <div class="modal-date-item">
+            <span class="date-label">Target Date:</span>
+            <span class="date-value" id="modal-end-date">—</span>
+          </div>
+          <div id="modal-countdown-wrap"></div>
+        </div>
         <div class="modal-body">
           <p id="modal-description" class="modal-description"></p>
         </div>

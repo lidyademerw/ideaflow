@@ -20,6 +20,8 @@ app = FastAPI(lifespan=lifespan)
 class IdeaCreate(BaseModel):
     title: str
     description: str = ""
+    start_date: str | None = None
+    end_date: str | None = None
 
 
 class StatusUpdate(BaseModel):
@@ -33,7 +35,12 @@ def get_ideas() -> list[dict[str, Any]]:
 
 @app.post("/api/ideas", status_code=status.HTTP_201_CREATED)
 def create_new_idea(idea: IdeaCreate) -> dict[str, Any]:
-    return database.create_idea(idea.title, idea.description)
+    return database.create_idea(
+        idea.title,
+        idea.description,
+        idea.start_date,
+        idea.end_date,
+    )
 
 
 @app.patch("/api/ideas/{idea_id}")

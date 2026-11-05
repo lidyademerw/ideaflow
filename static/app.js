@@ -13,6 +13,8 @@ const counts = {
 const ideaForm = document.getElementById("idea-form");
 const ideaTitleInput = document.getElementById("idea-title");
 const ideaDescriptionInput = document.getElementById("idea-description");
+const ideaStartDateInput = document.getElementById("idea-start-date");
+const ideaEndDateInput = document.getElementById("idea-end-date");
 const submitBtn = document.getElementById("submit-btn");
 
 const ideaModal = document.getElementById("idea-modal");
@@ -20,6 +22,9 @@ const modalCloseBtn = document.getElementById("modal-close");
 const modalTitle = document.getElementById("modal-title");
 const modalStatus = document.getElementById("modal-status");
 const modalDate = document.getElementById("modal-date");
+const modalStartDate = document.getElementById("modal-start-date");
+const modalEndDate = document.getElementById("modal-end-date");
+const modalCountdownWrap = document.getElementById("modal-countdown-wrap");
 const modalDescription = document.getElementById("modal-description");
 
 function normalizeStatus(status) {
@@ -50,6 +55,55 @@ function formatDate(dateString) {
   });
 }
 
+function formatDisplayDate(dateString) {
+  if (!dateString) return "—";
+  const [year, month, day] = dateString.split("-").map(Number);
+  if (!year || !month || !day) return dateString;
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function getCountdownBadge(endDateString) {
+  if (!endDateString) return null;
+
+  const [year, month, day] = endDateString.split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  const targetDate = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const diffDays = Math.round((targetDate - today) / msPerDay);
+
+  const badge = document.createElement("span");
+  badge.className = "badge countdown-badge";
+
+  if (diffDays < 0) {
+    const daysOverdue = Math.abs(diffDays);
+    badge.classList.add("countdown-overdue");
+    badge.textContent = `🔴 Overdue by ${daysOverdue}d`;
+  } else if (diffDays === 0) {
+    badge.classList.add("countdown-due-soon");
+    badge.textContent = "⚠️ Due today";
+  } else if (diffDays === 1) {
+    badge.classList.add("countdown-due-soon");
+    badge.textContent = "⚠️ Due tomorrow";
+  } else if (diffDays <= 3) {
+    badge.classList.add("countdown-due-soon");
+    badge.textContent = `⚠️ ${diffDays} days left`;
+  } else {
+    badge.classList.add("countdown-on-track");
+    badge.textContent = `⏳ ${diffDays} days left`;
+  }
+
+  return badge;
+}
+
 function openModal(idea) {
   modalTitle.textContent = idea.title;
 
@@ -58,6 +112,16 @@ function openModal(idea) {
   modalStatus.textContent = getStatusLabel(normalizedStatus);
 
   modalDate.textContent = formatDate(idea.created_at);
+  modalStartDate.textContent = formatDisplayDate(idea.start_date);
+  modalEndDate.textContent = formatDisplayDate(idea.end_date);
+
+  modalCountdownWrap.innerHTML = "";
+  if (idea.end_date) {
+    const countdownBadge = getCountdownBadge(idea.end_date);
+    if (countdownBadge) {
+      modalCountdownWrap.appendChild(countdownBadge);
+    }
+  }
 
   if (idea.description && idea.description.trim() !== "") {
     modalDescription.textContent = idea.description;
@@ -95,12 +159,23 @@ function createCardElement(idea) {
   title.className = "card-title";
   title.textContent = idea.title;
 
+  const meta = document.createElement("div");
+  meta.className = "card-meta";
+
   const badge = document.createElement("span");
   badge.className = `badge badge-${idea.status}`;
   badge.textContent = getStatusLabel(idea.status);
+  meta.appendChild(badge);
+
+  if (idea.end_date) {
+    const countdownBadge = getCountdownBadge(idea.end_date);
+    if (countdownBadge) {
+      meta.appendChild(countdownBadge);
+    }
+  }
 
   top.appendChild(title);
-  top.appendChild(badge);
+  top.appendChild(meta);
   card.appendChild(top);
 
   if (idea.description && idea.description.trim() !== "") {
@@ -237,6 +312,8 @@ ideaForm.addEventListener("submit", async event => {
   event.preventDefault();
   const title = ideaTitleInput.value.trim();
   const description = ideaDescriptionInput.value.trim();
+  const startDate = ideaStartDateInput.value || null;
+  const endDate = ideaEndDateInput.value || null;
   if (!title) return;
 
   submitBtn.disabled = true;
@@ -245,7 +322,12 @@ ideaForm.addEventListener("submit", async event => {
     const response = await fetch("/api/ideas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description })
+      body: JSON.stringify({
+        title,
+        description,
+        start_date: startDate,
+        end_date: endDate
+      })
     });
 
     if (!response.ok) throw new Error("Failed to create idea");
