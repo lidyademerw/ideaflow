@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IdeaFlow</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-brand">
+        <h1>💡 IdeaFlow</h1>
+        <p class="tagline">Capture, track, and execute your best ideas</p>
+      </div>
+      <form id="idea-form" class="idea-form">
+        <div class="form-inputs">
+          <input
+            type="text"
+            id="idea-title"
+            placeholder="What's your idea?"
+            required
+            autocomplete="off"
+          />
+          <input
+            type="text"
+            id="idea-description"
+            placeholder="Add details or context (optional)..."
+            autocomplete="off"
+          />
+        </div>
+        <button type="submit" id="submit-btn" class="btn btn-primary">Add Idea</button>
+      </form>
+    </header>
+
+    <main class="kanban-board">
+      <section class="kanban-column" data-status="todo">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="column-icon">💡</span>
+            <h2>Ideas</h2>
+          </div>
+          <span class="column-count" id="count-todo">0</span>
+        </div>
+        <div class="card-list" id="list-todo"></div>
+      </section>
+
+      <section class="kanban-column" data-status="in-progress">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="column-icon">⚡</span>
+            <h2>In Progress</h2>
+          </div>
+          <span class="column-count" id="count-in-progress">0</span>
+        </div>
+        <div class="card-list" id="list-in-progress"></div>
+      </section>
+
+      <section class="kanban-column" data-status="completed">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="column-icon">✅</span>
+            <h2>Completed</h2>
+          </div>
+          <span class="column-count" id="count-completed">0</span>
+        </div>
+        <div class="card-list" id="list-completed"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

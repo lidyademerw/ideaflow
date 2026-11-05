@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import database
@@ -56,3 +57,5 @@ def delete_existing_idea(idea_id: int) -> dict[str, str]:
         )
     return {"message": "Idea deleted successfully"}
 
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
