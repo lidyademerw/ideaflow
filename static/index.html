@@ -70,9 +70,24 @@
         <div class="card-list" id="list-completed"></div>
       </section>
     </main>
+
+    <dialog id="idea-modal" class="modal">
+      <div class="modal-card">
+        <div class="modal-top">
+          <div class="modal-meta">
+            <span id="modal-status" class="badge"></span>
+            <span id="modal-date" class="modal-date"></span>
+          </div>
+          <button type="button" id="modal-close" class="modal-close-btn" aria-label="Close modal">✕</button>
+        </div>
+        <h2 id="modal-title" class="modal-title"></h2>
+        <div class="modal-body">
+          <p id="modal-description" class="modal-description"></p>
+        </div>
+      </div>
+    </dialog>
   </div>
 
   <script src="app.js"></script>
 </body>
 </html>
-

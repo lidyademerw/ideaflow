@@ -15,6 +15,13 @@ const ideaTitleInput = document.getElementById("idea-title");
 const ideaDescriptionInput = document.getElementById("idea-description");
 const submitBtn = document.getElementById("submit-btn");
 
+const ideaModal = document.getElementById("idea-modal");
+const modalCloseBtn = document.getElementById("modal-close");
+const modalTitle = document.getElementById("modal-title");
+const modalStatus = document.getElementById("modal-status");
+const modalDate = document.getElementById("modal-date");
+const modalDescription = document.getElementById("modal-description");
+
 function normalizeStatus(status) {
   if (status === "in_progress" || status === "in-progress") return "in-progress";
   if (status === "completed" || status === "done") return "completed";
@@ -27,12 +34,51 @@ function getStatusLabel(status) {
   return "Idea";
 }
 
+function formatDate(dateString) {
+  if (!dateString) return "";
+  const isoFormatted = dateString.includes("T") ? dateString : dateString.replace(" ", "T") + "Z";
+  const date = new Date(isoFormatted);
+  if (isNaN(date.getTime())) {
+    return dateString;
+  }
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function openModal(idea) {
+  modalTitle.textContent = idea.title;
+
+  const normalizedStatus = normalizeStatus(idea.status);
+  modalStatus.className = `badge badge-${normalizedStatus}`;
+  modalStatus.textContent = getStatusLabel(normalizedStatus);
+
+  modalDate.textContent = formatDate(idea.created_at);
+
+  if (idea.description && idea.description.trim() !== "") {
+    modalDescription.textContent = idea.description;
+    modalDescription.classList.remove("empty");
+  } else {
+    modalDescription.textContent = "No description provided.";
+    modalDescription.classList.add("empty");
+  }
+
+  ideaModal.showModal();
+}
+
 function createActionButton(label, onClick) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "btn btn-action";
   button.textContent = label;
-  button.addEventListener("click", onClick);
+  button.addEventListener("click", event => {
+    event.stopPropagation();
+    onClick();
+  });
   return button;
 }
 
@@ -66,6 +112,7 @@ function createCardElement(idea) {
 
   const actions = document.createElement("div");
   actions.className = "card-actions";
+  actions.addEventListener("click", event => event.stopPropagation());
 
   const actionGroup = document.createElement("div");
   actionGroup.className = "action-group";
@@ -83,11 +130,21 @@ function createCardElement(idea) {
   deleteBtn.type = "button";
   deleteBtn.className = "btn btn-delete";
   deleteBtn.textContent = "🗑 Delete";
-  deleteBtn.addEventListener("click", () => deleteIdea(idea.id, card));
+  deleteBtn.addEventListener("click", event => {
+    event.stopPropagation();
+    deleteIdea(idea.id, card);
+  });
 
   actions.appendChild(actionGroup);
   actions.appendChild(deleteBtn);
   card.appendChild(actions);
+
+  card.addEventListener("click", event => {
+    if (event.target.closest("button") || event.target.closest(".card-actions")) {
+      return;
+    }
+    openModal(idea);
+  });
 
   return card;
 }
@@ -212,5 +269,25 @@ ideaForm.addEventListener("submit", async event => {
   }
 });
 
-document.addEventListener("DOMContentLoaded", fetchIdeas);
+modalCloseBtn.addEventListener("click", () => {
+  ideaModal.close();
+});
 
+ideaModal.addEventListener("click", event => {
+  const rect = ideaModal.getBoundingClientRect();
+  const isInDialog = (
+    event.clientX >= rect.left &&
+    event.clientX <= rect.right &&
+    event.clientY >= rect.top &&
+    event.clientY <= rect.bottom
+  );
+  if (!isInDialog) {
+    ideaModal.close();
+  }
+});
+
+ideaModal.addEventListener("cancel", () => {
+  ideaModal.close();
+});
+
+document.addEventListener("DOMContentLoaded", fetchIdeas);
