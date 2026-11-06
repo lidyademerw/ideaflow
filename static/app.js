@@ -12,10 +12,28 @@ const counts = {
 
 const ideaForm = document.getElementById("idea-form");
 const ideaTitleInput = document.getElementById("idea-title");
-const ideaDescriptionInput = document.getElementById("idea-description");
+const ideaDescInput = document.getElementById("idea-desc");
 const ideaStartDateInput = document.getElementById("idea-start-date");
 const ideaEndDateInput = document.getElementById("idea-end-date");
 const submitBtn = document.getElementById("submit-btn");
+
+const titleError = document.getElementById("title-error");
+const titleCharCount = document.getElementById("title-char-count");
+const descCharCount = document.getElementById("desc-char-count");
+const MAX_TITLE_LENGTH = 60;
+const MAX_DESC_LENGTH = 500;
+
+const telegramAiTrigger = document.getElementById("telegram-ai-trigger");
+const telegramAiModal = document.getElementById("telegram-ai-modal");
+const telegramAiClose = document.getElementById("telegram-ai-close");
+const telegramOriginalAccordion = document.getElementById("telegram-original-accordion");
+const telegramOriginalText = document.getElementById("telegram-original-text");
+const telegramResultText = document.getElementById("telegram-result-text");
+const telegramCopyBtn = document.getElementById("telegram-copy-btn");
+const telegramApplyBtn = document.getElementById("telegram-apply-btn");
+
+let activeTargetInput = ideaTitleInput;
+let currentFixedText = "";
 
 const ideaModal = document.getElementById("idea-modal");
 const modalCloseBtn = document.getElementById("modal-close");
@@ -308,13 +326,50 @@ async function deleteIdea(id, card) {
   }
 }
 
+function updateCharCounts() {
+  if (ideaTitleInput && titleCharCount) {
+    const titleLen = ideaTitleInput.value.length;
+    titleCharCount.textContent = `${titleLen}/${MAX_TITLE_LENGTH}`;
+    if (titleLen > MAX_TITLE_LENGTH) {
+      ideaTitleInput.classList.add("input-over-limit");
+      titleCharCount.classList.add("count-over-limit");
+      if (titleError) titleError.style.display = "block";
+      if (submitBtn) submitBtn.disabled = true;
+    } else {
+      ideaTitleInput.classList.remove("input-over-limit");
+      titleCharCount.classList.remove("count-over-limit");
+      if (titleError) titleError.style.display = "none";
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
+  if (ideaDescInput && descCharCount) {
+    const descLen = ideaDescInput.value.length;
+    descCharCount.textContent = `${descLen}/${MAX_DESC_LENGTH}`;
+  }
+}
+
+if (ideaTitleInput) {
+  ideaTitleInput.addEventListener("input", updateCharCounts);
+  ideaTitleInput.addEventListener("focus", () => {
+    activeTargetInput = ideaTitleInput;
+  });
+}
+
+if (ideaDescInput) {
+  ideaDescInput.addEventListener("input", updateCharCounts);
+  ideaDescInput.addEventListener("focus", () => {
+    activeTargetInput = ideaDescInput;
+  });
+}
+
 ideaForm.addEventListener("submit", async event => {
   event.preventDefault();
   const title = ideaTitleInput.value.trim();
-  const description = ideaDescriptionInput.value.trim();
+  const description = ideaDescInput ? ideaDescInput.value.trim() : "";
   const startDate = ideaStartDateInput.value || null;
   const endDate = ideaEndDateInput.value || null;
-  if (!title) return;
+  if (!title || title.length > MAX_TITLE_LENGTH) return;
 
   submitBtn.disabled = true;
 
@@ -343,6 +398,8 @@ ideaForm.addEventListener("submit", async event => {
     updateColumnStates();
 
     ideaForm.reset();
+    updateCharCounts();
+    activeTargetInput = ideaTitleInput;
     ideaTitleInput.focus();
   } catch (error) {
     console.error("Error creating idea:", error);
@@ -350,6 +407,118 @@ ideaForm.addEventListener("submit", async event => {
     submitBtn.disabled = false;
   }
 });
+
+if (telegramAiTrigger) {
+  telegramAiTrigger.addEventListener("click", async () => {
+    let sourceInput = activeTargetInput;
+    let textToFix = sourceInput && sourceInput.value.trim() ? sourceInput.value.trim() : "";
+
+    if (!textToFix) {
+      if (ideaDescInput && ideaDescInput.value.trim()) {
+        sourceInput = ideaDescInput;
+        textToFix = ideaDescInput.value.trim();
+      } else if (ideaTitleInput && ideaTitleInput.value.trim()) {
+        sourceInput = ideaTitleInput;
+        textToFix = ideaTitleInput.value.trim();
+      }
+    }
+
+    if (!textToFix) {
+      ideaTitleInput.focus();
+      ideaTitleInput.classList.add("input-shake");
+      setTimeout(() => ideaTitleInput.classList.remove("input-shake"), 1000);
+      return;
+    }
+
+    activeTargetInput = sourceInput;
+    telegramOriginalText.textContent = textToFix;
+    if (telegramOriginalAccordion) {
+      telegramOriginalAccordion.open = true;
+    }
+
+    currentFixedText = "";
+    telegramResultText.innerHTML = '<span class="telegram-loading-pulse">Fixing with AI...</span>';
+    telegramApplyBtn.disabled = true;
+    telegramCopyBtn.disabled = true;
+    telegramCopyBtn.textContent = "📋 Copy";
+
+    telegramAiModal.showModal();
+
+    try {
+      const response = await fetch("/api/ai/fix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textToFix })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to fix text");
+      }
+
+      currentFixedText = data.fixed_text || textToFix;
+      telegramResultText.textContent = currentFixedText;
+      telegramApplyBtn.disabled = false;
+      telegramCopyBtn.disabled = false;
+    } catch (error) {
+      telegramResultText.innerHTML = '<span class="telegram-error-text">' + (error.message || "Failed to fix text") + '</span>';
+      telegramApplyBtn.disabled = true;
+      telegramCopyBtn.disabled = true;
+    }
+  });
+}
+
+if (telegramCopyBtn) {
+  telegramCopyBtn.addEventListener("click", async () => {
+    if (!currentFixedText) return;
+    try {
+      await navigator.clipboard.writeText(currentFixedText);
+      telegramCopyBtn.textContent = "✓ Copied!";
+      setTimeout(() => {
+        telegramCopyBtn.textContent = "📋 Copy";
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  });
+}
+
+if (telegramApplyBtn) {
+  telegramApplyBtn.addEventListener("click", () => {
+    if (!currentFixedText) return;
+    if (activeTargetInput) {
+      activeTargetInput.value = currentFixedText;
+      updateCharCounts();
+      activeTargetInput.focus();
+    }
+    telegramAiModal.close();
+  });
+}
+
+if (telegramAiClose) {
+  telegramAiClose.addEventListener("click", () => {
+    telegramAiModal.close();
+  });
+}
+
+if (telegramAiModal) {
+  telegramAiModal.addEventListener("click", event => {
+    const rect = telegramAiModal.getBoundingClientRect();
+    const isInDialog = (
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    );
+    if (!isInDialog) {
+      telegramAiModal.close();
+    }
+  });
+
+  telegramAiModal.addEventListener("cancel", () => {
+    telegramAiModal.close();
+  });
+}
 
 modalCloseBtn.addEventListener("click", () => {
   ideaModal.close();

@@ -18,27 +18,43 @@
       </div>
       <form id="idea-form" class="idea-form">
         <div class="form-inputs">
-          <input
-            type="text"
-            id="idea-title"
-            placeholder="What's your idea?"
-            required
-            autocomplete="off"
-          />
-          <input
-            type="text"
-            id="idea-description"
-            placeholder="Add details or context (optional)..."
-            autocomplete="off"
-          />
-          <div class="date-inputs-group">
-            <div class="date-field">
-              <label for="idea-start-date">Start Date</label>
-              <input type="date" id="idea-start-date" />
+          <div class="field-container title-field-container">
+            <div class="input-with-button-wrapper">
+              <input
+                type="text"
+                id="idea-title"
+                placeholder="Core idea (short & punchy)..."
+                required
+                autocomplete="off"
+              />
+              <button type="button" id="telegram-ai-trigger" class="btn-telegram-ai" title="Fix with AI">✨ AI</button>
             </div>
-            <div class="date-field">
-              <label for="idea-end-date">Target Date</label>
-              <input type="date" id="idea-end-date" />
+            <div class="field-meta">
+              <span id="title-error" class="field-error-text" style="display: none;">Maximum 60 characters allowed</span>
+              <span id="title-char-count" class="char-count">0/60</span>
+            </div>
+          </div>
+
+          <div class="field-container desc-field-container">
+            <textarea
+              id="idea-desc"
+              rows="1"
+              maxlength="500"
+              placeholder="Detailed explanation, notes, or context..."
+            ></textarea>
+            <div class="field-meta">
+              <span id="desc-char-count" class="char-count">0/500</span>
+            </div>
+          </div>
+
+          <div class="date-inputs-group">
+            <div class="date-input-wrap">
+              <span class="date-tag">Start</span>
+              <input type="date" id="idea-start-date" aria-label="Start Date" />
+            </div>
+            <div class="date-input-wrap">
+              <span class="date-tag">Target</span>
+              <input type="date" id="idea-end-date" aria-label="Target Date" />
             </div>
           </div>
         </div>
@@ -104,6 +120,39 @@
         </div>
         <div class="modal-body">
           <p id="modal-description" class="modal-description"></p>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="telegram-ai-modal" class="telegram-modal">
+      <div class="telegram-modal-card">
+        <div class="telegram-modal-header">
+          <h2 class="telegram-modal-title">AI Editor</h2>
+          <button type="button" id="telegram-ai-close" class="telegram-close-btn" aria-label="Close">✕</button>
+        </div>
+
+        <div class="telegram-modal-body">
+          <details id="telegram-original-accordion" class="telegram-accordion" open>
+            <summary class="telegram-accordion-summary">
+              <span>Original</span>
+              <span class="telegram-chevron">⌄</span>
+            </summary>
+            <div id="telegram-original-text" class="telegram-original-content"></div>
+          </details>
+
+          <hr class="telegram-divider" />
+
+          <div class="telegram-result-section">
+            <span class="telegram-result-label">Result</span>
+            <div class="telegram-result-wrapper">
+              <div id="telegram-result-text" class="telegram-result-content"></div>
+              <button type="button" id="telegram-copy-btn" class="telegram-copy-btn">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="telegram-modal-footer">
+          <button type="button" id="telegram-apply-btn" class="telegram-apply-btn">Apply</button>
         </div>
       </div>
     </dialog>
