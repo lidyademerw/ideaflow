@@ -19,16 +19,15 @@
       <form id="idea-form" class="idea-form">
         <div class="form-inputs">
           <div class="field-container title-field-container">
-            <div class="input-with-button-wrapper">
-              <input
-                type="text"
-                id="idea-title"
-                placeholder="Core idea (short & punchy)..."
-                required
-                autocomplete="off"
-              />
-              <button type="button" id="telegram-ai-trigger" class="btn-telegram-ai" title="Fix with AI">✨ AI</button>
-            </div>
+            <input
+              type="text"
+              id="idea-title"
+              maxlength="60"
+              placeholder="Core idea (short & punchy)..."
+              required
+              autocomplete="off"
+            />
+            <button type="button" class="ai-sparkle-btn" id="ai-fix-title" title="Refine title with AI">✦Ai</button>
             <div class="field-meta">
               <span id="title-error" class="field-error-text" style="display: none;">Maximum 60 characters allowed</span>
               <span id="title-char-count" class="char-count">0/60</span>
@@ -42,6 +41,7 @@
               maxlength="500"
               placeholder="Detailed explanation, notes, or context..."
             ></textarea>
+            <button type="button" class="ai-sparkle-btn" id="ai-fix-desc" title="Polish explanation with AI">✦Ai</button>
             <div class="field-meta">
               <span id="desc-char-count" class="char-count">0/500</span>
             </div>
@@ -120,39 +120,6 @@
         </div>
         <div class="modal-body">
           <p id="modal-description" class="modal-description"></p>
-        </div>
-      </div>
-    </dialog>
-
-    <dialog id="telegram-ai-modal" class="telegram-modal">
-      <div class="telegram-modal-card">
-        <div class="telegram-modal-header">
-          <h2 class="telegram-modal-title">AI Editor</h2>
-          <button type="button" id="telegram-ai-close" class="telegram-close-btn" aria-label="Close">✕</button>
-        </div>
-
-        <div class="telegram-modal-body">
-          <details id="telegram-original-accordion" class="telegram-accordion" open>
-            <summary class="telegram-accordion-summary">
-              <span>Original</span>
-              <span class="telegram-chevron">⌄</span>
-            </summary>
-            <div id="telegram-original-text" class="telegram-original-content"></div>
-          </details>
-
-          <hr class="telegram-divider" />
-
-          <div class="telegram-result-section">
-            <span class="telegram-result-label">Result</span>
-            <div class="telegram-result-wrapper">
-              <div id="telegram-result-text" class="telegram-result-content"></div>
-              <button type="button" id="telegram-copy-btn" class="telegram-copy-btn">📋 Copy</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="telegram-modal-footer">
-          <button type="button" id="telegram-apply-btn" class="telegram-apply-btn">Apply</button>
         </div>
       </div>
     </dialog>

@@ -35,6 +35,7 @@ class StatusUpdate(BaseModel):
 
 class FixRequest(BaseModel):
     text: str
+    target: str = "title"
 
 
 @app.get("/api/ideas")
@@ -91,17 +92,22 @@ def fix_text(payload: FixRequest) -> dict[str, str]:
 
     try:
         client = genai.Client(api_key=api_key)
-        prompt = (
-            "You are an expert editor. Fix all spelling, grammatical, punctuation, "
-            "and phrasing errors in the provided text. Keep the original voice, tone, "
-            "and formatting intact. Return ONLY the corrected text. Do NOT add preamble or explanations.\n\n"
-            f"Text:\n{payload.text}"
-        )
+        if payload.target == "title":
+            instruction = (
+                "Turn this text into a crisp, inspiring, punchy task title "
+                "(maximum 7 words, under 60 chars). Return ONLY the title text."
+            )
+        else:
+            instruction = (
+                "Fix all spelling and grammar errors, make it clear and well-structured, "
+                "maintaining the author's voice. Return ONLY the polished text."
+            )
+        prompt = f"{instruction}\n\nText:\n{payload.text}"
         response = client.models.generate_content(
             model="gemini-3.5-flash-lite",
             contents=prompt,
         )
-        fixed = response.text.strip() if response.text else payload.text
+        fixed = response.text.strip().strip('"\'') if response.text else payload.text
         return {"fixed_text": fixed}
     except Exception as e:
         raise HTTPException(

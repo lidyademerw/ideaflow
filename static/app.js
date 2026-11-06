@@ -23,17 +23,8 @@ const descCharCount = document.getElementById("desc-char-count");
 const MAX_TITLE_LENGTH = 60;
 const MAX_DESC_LENGTH = 500;
 
-const telegramAiTrigger = document.getElementById("telegram-ai-trigger");
-const telegramAiModal = document.getElementById("telegram-ai-modal");
-const telegramAiClose = document.getElementById("telegram-ai-close");
-const telegramOriginalAccordion = document.getElementById("telegram-original-accordion");
-const telegramOriginalText = document.getElementById("telegram-original-text");
-const telegramResultText = document.getElementById("telegram-result-text");
-const telegramCopyBtn = document.getElementById("telegram-copy-btn");
-const telegramApplyBtn = document.getElementById("telegram-apply-btn");
-
-let activeTargetInput = ideaTitleInput;
-let currentFixedText = "";
+const aiFixTitleBtn = document.getElementById("ai-fix-title");
+const aiFixDescBtn = document.getElementById("ai-fix-desc");
 
 const ideaModal = document.getElementById("idea-modal");
 const modalCloseBtn = document.getElementById("modal-close");
@@ -351,16 +342,52 @@ function updateCharCounts() {
 
 if (ideaTitleInput) {
   ideaTitleInput.addEventListener("input", updateCharCounts);
-  ideaTitleInput.addEventListener("focus", () => {
-    activeTargetInput = ideaTitleInput;
-  });
 }
 
 if (ideaDescInput) {
   ideaDescInput.addEventListener("input", updateCharCounts);
-  ideaDescInput.addEventListener("focus", () => {
-    activeTargetInput = ideaDescInput;
-  });
+}
+
+async function handleAiFix(input, btn, target) {
+  const text = input.value.trim();
+  if (!text) {
+    input.focus();
+    input.classList.add("input-shake");
+    setTimeout(() => input.classList.remove("input-shake"), 1000);
+    return;
+  }
+
+  btn.textContent = "⏳";
+  btn.disabled = true;
+
+  try {
+    const response = await fetch("/api/ai/fix", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, target })
+    });
+
+    const data = await response.json();
+    if (response.ok && data.fixed_text) {
+      input.value = data.fixed_text;
+      updateCharCounts();
+      input.classList.add("input-glow");
+      setTimeout(() => input.classList.remove("input-glow"), 1200);
+    }
+  } catch (error) {
+    console.error(`AI fix failed for ${target}:`, error);
+  } finally {
+    btn.textContent = "✦Ai";
+    btn.disabled = false;
+  }
+}
+
+if (aiFixTitleBtn && ideaTitleInput) {
+  aiFixTitleBtn.addEventListener("click", () => handleAiFix(ideaTitleInput, aiFixTitleBtn, "title"));
+}
+
+if (aiFixDescBtn && ideaDescInput) {
+  aiFixDescBtn.addEventListener("click", () => handleAiFix(ideaDescInput, aiFixDescBtn, "desc"));
 }
 
 ideaForm.addEventListener("submit", async event => {
@@ -399,7 +426,6 @@ ideaForm.addEventListener("submit", async event => {
 
     ideaForm.reset();
     updateCharCounts();
-    activeTargetInput = ideaTitleInput;
     ideaTitleInput.focus();
   } catch (error) {
     console.error("Error creating idea:", error);
@@ -407,118 +433,6 @@ ideaForm.addEventListener("submit", async event => {
     submitBtn.disabled = false;
   }
 });
-
-if (telegramAiTrigger) {
-  telegramAiTrigger.addEventListener("click", async () => {
-    let sourceInput = activeTargetInput;
-    let textToFix = sourceInput && sourceInput.value.trim() ? sourceInput.value.trim() : "";
-
-    if (!textToFix) {
-      if (ideaDescInput && ideaDescInput.value.trim()) {
-        sourceInput = ideaDescInput;
-        textToFix = ideaDescInput.value.trim();
-      } else if (ideaTitleInput && ideaTitleInput.value.trim()) {
-        sourceInput = ideaTitleInput;
-        textToFix = ideaTitleInput.value.trim();
-      }
-    }
-
-    if (!textToFix) {
-      ideaTitleInput.focus();
-      ideaTitleInput.classList.add("input-shake");
-      setTimeout(() => ideaTitleInput.classList.remove("input-shake"), 1000);
-      return;
-    }
-
-    activeTargetInput = sourceInput;
-    telegramOriginalText.textContent = textToFix;
-    if (telegramOriginalAccordion) {
-      telegramOriginalAccordion.open = true;
-    }
-
-    currentFixedText = "";
-    telegramResultText.innerHTML = '<span class="telegram-loading-pulse">Fixing with AI...</span>';
-    telegramApplyBtn.disabled = true;
-    telegramCopyBtn.disabled = true;
-    telegramCopyBtn.textContent = "📋 Copy";
-
-    telegramAiModal.showModal();
-
-    try {
-      const response = await fetch("/api/ai/fix", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: textToFix })
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Failed to fix text");
-      }
-
-      currentFixedText = data.fixed_text || textToFix;
-      telegramResultText.textContent = currentFixedText;
-      telegramApplyBtn.disabled = false;
-      telegramCopyBtn.disabled = false;
-    } catch (error) {
-      telegramResultText.innerHTML = '<span class="telegram-error-text">' + (error.message || "Failed to fix text") + '</span>';
-      telegramApplyBtn.disabled = true;
-      telegramCopyBtn.disabled = true;
-    }
-  });
-}
-
-if (telegramCopyBtn) {
-  telegramCopyBtn.addEventListener("click", async () => {
-    if (!currentFixedText) return;
-    try {
-      await navigator.clipboard.writeText(currentFixedText);
-      telegramCopyBtn.textContent = "✓ Copied!";
-      setTimeout(() => {
-        telegramCopyBtn.textContent = "📋 Copy";
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  });
-}
-
-if (telegramApplyBtn) {
-  telegramApplyBtn.addEventListener("click", () => {
-    if (!currentFixedText) return;
-    if (activeTargetInput) {
-      activeTargetInput.value = currentFixedText;
-      updateCharCounts();
-      activeTargetInput.focus();
-    }
-    telegramAiModal.close();
-  });
-}
-
-if (telegramAiClose) {
-  telegramAiClose.addEventListener("click", () => {
-    telegramAiModal.close();
-  });
-}
-
-if (telegramAiModal) {
-  telegramAiModal.addEventListener("click", event => {
-    const rect = telegramAiModal.getBoundingClientRect();
-    const isInDialog = (
-      event.clientX >= rect.left &&
-      event.clientX <= rect.right &&
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom
-    );
-    if (!isInDialog) {
-      telegramAiModal.close();
-    }
-  });
-
-  telegramAiModal.addEventListener("cancel", () => {
-    telegramAiModal.close();
-  });
-}
 
 modalCloseBtn.addEventListener("click", () => {
   ideaModal.close();
